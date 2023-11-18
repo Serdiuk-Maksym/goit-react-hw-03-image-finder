@@ -1,41 +1,32 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-
-import css from './ImageGallery.module.css';
 import { ImageGalleryItem } from 'components/ImageGalleryItem/ImageGalleryItem';
 
-export class ImageGallery extends Component {
-  showLargeImage = largeImageUrl => {
-    this.props.setUrlLargeImage(largeImageUrl);
-  };
+import css from './ImageGallery.module.css';
 
-  render() {
-    return (
+export const ImageGallery = ({ imageList, onClick }) => {
+  return (
+    <>
       <ul className={css.ImageGallery}>
-        {this.props.images.map(item => {
-          return (
-            <ImageGalleryItem
-              key={item.id}
-              smallImageUrl={item.webformatURL}
-              largeImageUrl={item.largeImageURL}
-              showImage={this.showLargeImage}
-            />
-          );
-        })}
+        {imageList.map(elem => (
+          <ImageGalleryItem
+            key={elem.id}
+            src={elem.webformatURL}
+            alt={elem.tags}
+            largeImageURL={elem.largeImageURL}
+            onClick={onClick}
+          />
+        ))}
       </ul>
-    );
-  }
-}
+    </>
+  );
+};
+
 ImageGallery.propTypes = {
-  searchValue: PropTypes.string.isRequired,
-  page: PropTypes.number.isRequired,
-  images: PropTypes.arrayOf(
+  imageList: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.number.isRequired,
-      largeImageURL: PropTypes.string.isRequired,
-      webformatURL: PropTypes.string.isRequired,
     })
-  ),
-  setUrlLargeImage: PropTypes.func.isRequired,
-  setAppState: PropTypes.func.isRequired,
+  ).isRequired,
+  onClick: PropTypes.func.isRequired,
 };
