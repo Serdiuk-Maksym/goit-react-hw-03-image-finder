@@ -1,16 +1,95 @@
-export const App = () => {
-  return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        fontSize: 40,
-        color: '#010101'
-      }}
-    >
-      React homework template
-    </div>
-  );
-};
+import { Component } from 'react';
+import { Button } from './Button/Button';
+import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Loader } from './Loader/Loader';
+import { Modal } from './Modal/Modal';
+import { Searchbar } from './Searchbar/Searchbar';
+import { fetchData } from './services/fetch-api';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+
+export class App extends Component {
+  state = {
+    images: [],
+    searchValue: '',
+    page: 1,
+    toShowLargeImage: '',
+    showModal: false,
+    showLoader: false,
+    showLoadMore: false,
+  };
+
+  async componentDidUpdate(prevProps, prevState) {
+    const { searchValue, page } = this.state;
+
+    if (prevState.page !== page || prevState.searchValue !== searchValue) {
+      try {
+        this.setState({ showLoader: true });
+
+        const fetchResult = await fetchData(searchValue, page);
+        if (fetchResult.length === 0) {
+          throw new Error('Sorry, no results...');
+        }
+        this.setState({
+          images: [...this.state.images, ...fetchResult],
+          showLoadMore: fetchResult.length === 12,
+        });
+      } catch (error) {
+        this.setState({ showLoadMore: false });
+        Notify.warning(error.message);
+      } finally {
+        this.setState({ showLoader: false });
+      }
+    }
+  }
+
+  toggleModal = () => {
+    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  };
+
+  onLoadMore = () => {
+    return this.setState(prevState => ({ page: prevState.page + 1 }));
+  };
+
+  toShowLargeImage = url => {
+    this.toggleModal();
+    return this.setState({ toShowLargeImage: url });
+  };
+
+  setAppState = value => {
+    this.setState({
+      page: 1,
+      images: [],
+      searchValue: value,
+      showLoadMore: false,
+    });
+  };
+  render() {
+    const { searchValue, page, showLoader, showLoadMore, showModal, images } =
+      this.state;
+
+    return (
+      <div>
+        <Searchbar
+          setAppState={this.setAppState}
+          searchValue={this.state.searchValue}
+        />
+
+        <ImageGallery
+          searchValue={searchValue}
+          page={page}
+          images={images}
+          setUrlLargeImage={this.toShowLargeImage}
+          setAppState={this.setAppState}
+        />
+        {showLoadMore && <Button click={this.onLoadMore} />}
+        {showModal && (
+          <Modal
+            largeImageUrl={this.state.toShowLargeImage}
+            onCloseModal={this.toggleModal}
+          />
+        )}
+        {showLoader && <Loader />}
+      </div>
+    );
+  }
+}
