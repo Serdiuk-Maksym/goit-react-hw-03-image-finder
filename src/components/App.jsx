@@ -14,7 +14,7 @@ import css from './App.module.css';
 export class App extends Component {
   state = {
     imageList: null,
-    query: '',
+    qwerty: '',
     page: 1,
     isModalShow: false,
     isLoaderShow: false,
@@ -22,19 +22,19 @@ export class App extends Component {
   };
 
   onSubmit = event => {
-    const query = event.target.elements.input.value;
-    if (query === '') {
+    const qwerty = event.target.elements.input.value;
+    if (qwerty === '') {
       Notify.info(
         `It seems you didn't write anything, please specify what exactly you are looking for`
       );
     } else {
-      if (this.state.query === query) {
+      if (this.state.qwerty === qwerty) {
         Notify.info(
-          `It seems your query duplicate previous, please write another one`
+          `It seems your qwerty duplicate previous, please write another one`
         );
       } else {
         this.setState({
-          query: query.toLowerCase(),
+          qwerty: qwerty.toLowerCase(),
           isLoadMoreShow: false,
           imageList: [],
           page: 1,
@@ -65,41 +65,31 @@ export class App extends Component {
 
   async componentDidUpdate(prevProps, prevState) {
     if (
-      prevState.query !== this.state.query ||
+      prevState.qwerty !== this.state.qwerty ||
       prevState.page !== this.state.page
     ) {
       this.setState({ isLoaderShow: true });
 
       try {
-        const response = await getImages(this.state.query, this.state.page);
+        const response = await getImages(this.state.qwerty, this.state.page);
         const lastPage = Math.ceil(response.totalHits / PER_PAGE);
 
         if (response.totalHits === 0) {
           Notify.warning(
             'Sorry, there are no images matching your search query. Please try again.'
           );
-          this.setState({ isLoadMoreShow: false });
+          this.setState({ isLoadMoreShow: false, imageList: [] });
           console.log('check # 1');
-        } else if (lastPage < this.state.page && lastPage !== 0) {
-          this.setState({ isLoadMoreShow: false });
-          Notify.info(
-            `We're sorry, but you've reached the end of search results.`
-          );
-          console.log('check # 2');
         } else {
-          const totalImagesLoaded =
-            this.state.imageList.length + response.hits.length;
-
-          if (totalImagesLoaded < response.totalHits) {
-            this.setState(prevState => {
-              return {
-                imageList: [...prevState.imageList, ...response.hits],
-                isLoadMoreShow: true,
-              };
-            });
-          } else {
-            this.setState({ isLoadMoreShow: false });
+          const newImageList = response.hits;
+          if (this.state.page > 1) {
+            newImageList = [...this.state.imageList, ...response.hits];
           }
+
+          this.setState(prevState => ({
+            imageList: newImageList,
+            isLoadMoreShow: response.hits.length === PER_PAGE,
+          }));
         }
       } catch (error) {
         console.log(error);
