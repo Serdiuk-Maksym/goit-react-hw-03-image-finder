@@ -69,31 +69,42 @@ export class App extends Component {
       prevState.page !== this.state.page
     ) {
       this.setState({ isLoaderShow: true });
-      await getImages(this.state.query, this.state.page)
-        .then(response => {
-          const lastPage = Math.ceil(response.totalHits / PER_PAGE);
-          if (response.totalHits === 0) {
-            Notify.warning(
-              'Sorry, there are no images matching your search query. Please try again.'
-            );
-            this.setState({ isLoadMoreShow: false });
-            console.log('check # 1');
-          } else if (lastPage < this.state.page && lastPage !== 0) {
-            this.setState({ isLoadMoreShow: false });
-            Notify.info(
-              `We're sorry, but you've reached the end of search results.`
-            );
-            console.log('check # 2');
-          } else {
+
+      try {
+        const response = await getImages(this.state.query, this.state.page);
+        const lastPage = Math.ceil(response.totalHits / PER_PAGE);
+
+        if (response.totalHits === 0) {
+          Notify.warning(
+            'Sorry, there are no images matching your search query. Please try again.'
+          );
+          this.setState({ isLoadMoreShow: false });
+          console.log('check # 1');
+        } else if (lastPage < this.state.page && lastPage !== 0) {
+          this.setState({ isLoadMoreShow: false });
+          Notify.info(
+            `We're sorry, but you've reached the end of search results.`
+          );
+          console.log('check # 2');
+        } else {
+          const totalImagesLoaded =
+            this.state.imageList.length + response.hits.length;
+
+          if (totalImagesLoaded < response.totalHits) {
             this.setState(prevState => {
               return {
                 imageList: [...prevState.imageList, ...response.hits],
                 isLoadMoreShow: true,
               };
             });
+          } else {
+            this.setState({ isLoadMoreShow: false });
           }
-        })
-        .catch(error => console.log(error));
+        }
+      } catch (error) {
+        console.log(error);
+      }
+
       this.setState({ isLoaderShow: false });
     }
   }
